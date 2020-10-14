@@ -1,4 +1,4 @@
-import zmq, time, pandas, threading, IPython
+import zmq, time, datetime, pandas, threading, IPython
 
 class ZMQL(object):
     #| Nombres de puertos; deben llevar al principio y en mayusculas, el TIPO (ej.: "PUSH Data", "SUB Trading", etc.)
@@ -8,21 +8,22 @@ class ZMQL(object):
 
 #### Constructor #######################################################################################################
 
-    def __init__(self, ID, context, ports = _PortsDef, verbose = False): """ Object initializer.
-    This is the basic building block of the communication pipeline flowchart. Personal adaptations of this scheme
-    (e.g.: each one of the blocks in the trading system) will be a subclass of this, and shall inherit the following
-    functions: "init", "shutdown", "_send" and "_receive". One subclass should also have their own "_process" method
-    as a customized parsing procedure of the received messages. Finally, each subclass should automate all of these
-    "_" functions as lower level tools: by creating wrapping methods that include them inside. (e.g.: "open_trade").
-    Inputs:
-        >> "context"... "ZMQ context" object. Will identify all ports in the protocol.
-        >> "ports"..... "dict" object with port IDs as values. Keys must be "XXXX _______", where "XXXX" is the
-                        port type ("PUSH", "PULL", "PUB", "SUB", etc.), and after a space separator, "___" shall
-                        hold some short custom label (e.g.: "Data", "SAIX", etc.).
-        >> "verbose"... Control variable. "= None" disables console prints aside from prioritary Python errors
-                        (e.g.: assertions). "False" enables reports related to message sending, PULL responses
-                        and MQL4 errors. "True" prints SUB responses (e.g.: tick data, active trade data).
-    """
+    def __init__(self, ID, context, ports = _PortsDef, verbose = False): 
+        """ Object initializer.
+        This is the basic building block of the communication pipeline flowchart. Personal adaptations of this scheme
+        (e.g.: each one of the blocks in the trading system) will be a subclass of this, and shall inherit the following
+        functions: "init", "shutdown", "_send" and "_receive". One subclass should also have their own "_process" method
+        as a customized parsing procedure of the received messages. Finally, each subclass should automate all of these
+        "_" functions as lower level tools: by creating wrapping methods that include them inside. (e.g.: "open_trade").
+        Inputs:
+            >> "context"... "ZMQ context" object. Will identify all ports in the protocol.
+            >> "ports"..... "dict" object with port IDs as values. Keys must be "XXXX _______", where "XXXX" is the
+                            port type ("PUSH", "PULL", "PUB", "SUB", etc.), and after a space separator, "___" shall
+                            hold some short custom label (e.g.: "Data", "SAIX", etc.).
+            >> "verbose"... Control variable. "= None" disables console prints aside from prioritary Python errors
+                            (e.g.: assertions). "False" enables reports related to message sending, PULL responses
+                            and MQL4 errors. "True" prints SUB responses (e.g.: tick data, active trade data).
+        """
         assert isinstance(verbose, bool), "((INIT)) ERROR! \"verbose\" may either be \"True\", \"False\" or \"None\"."
         assert isinstance(context, zmq.sugar.context.Context), "((INIT)) ERROR! Use a valid (zmq.) \"context\" input."
         warn = "((INIT)) ERROR! \"ports\" dict may be something like: {\"PUSH ...\": (int), \"PULL ...\": (int), ...}."
@@ -60,9 +61,10 @@ class ZMQL(object):
 
 #### Terminación #######################################################################################################
 
-    def shutdown(self): """ ZMQ shutdown.
-    Will eliminate ports and terminate communication protocol. No inputs."
-    """
+    def shutdown(self): 
+        """ ZMQ shutdown.
+        Will eliminate ports and terminate communication protocol. No inputs."
+        """
         #| El hilo paralelo de recepción no debe seguir funcionando al cerrar ZMQ.
         self.Thread.join() #| Unirlo con el hilo principal, y cerrar ambos ya juntos.
         print("---------------------------------------"*2)
@@ -78,11 +80,12 @@ class ZMQL(object):
 
 #### Transmisión de mensajes ###########################################################################################
 
-    def _send(self, socket, message): """ Message sender.
-    Inputs:
-        >> "socket".... "string" with socket label as seen in Comm DataFrame. Must be of PUSH type.
-        >> "message"... "string" with message content. Must hold 10 words separated by ";".
-    """
+    def _send(self, socket, message): 
+        """ Message sender.
+        Inputs:
+            >> "socket".... "string" with socket label as seen in Comm DataFrame. Must be of PUSH type.
+            >> "message"... "string" with message content. Must hold 10 words separated by ";".
+        """
         if not isinstance(socket, str) or not isinstance(message, str):
             print(f">>{socket}<< ERROR! Message to be sent, must be string") ; return
         if "PUSH" not in socket: return #| Los puertos no PUSH no estan hechos para enviar mensajes.
@@ -96,15 +99,16 @@ class ZMQL(object):
 
 #### Recepción de mensajes #############################################################################################
 
-    def _receive(self): """ Message receiver.
-    This should never be executed directly. Must ONLY be accessed and running in the parallel "(self.)Thread".
-    """
+    def _receive(self): 
+        """ Message receiver.
+        This should never be executed directly. Must ONLY be accessed and running in the parallel "(self.)Thread".
+        """
         while self.Enable["comm"]: #| Dentro del hilo paralelo, siempre y cuando este parámetro de control sea "True"...
             sockets_polled = dict(self.Poller.poll()) #| Chequear cuales son los puertos que han recibido algo.
             for label in self.Comm.index: #| Tomar a cada uno de los puertos que tengo registrados.
                 Socket = self.Comm["Socket"][label] #| De ellos, tomar a cada uno de los sockets.
-                if (sockets_polled[Socket] != zmq.POLLIN): continue #| Saltear los que no son de recepción.
                 if (Socket not in sockets_polled.keys()): continue #| Saltear los que no hayan recibido nada.
+                if (sockets_polled[Socket] != zmq.POLLIN): continue #| Saltear los que no son de recepción.
                 try: message = self.Comm["Socket"][label].recv_string(zmq.DONTWAIT) #| Formular respuesta como string.
                 except: message = None #| Si no se pudo formular el string de respuesta, es que no hubo respuesta.
                 if message: #| Si se formuló una respuesta, parsearla literalmente como una "linea de Python".
@@ -126,9 +130,10 @@ class ZMQL(object):
 
 #### Procesamiento en recepción ########################################################################################
 
-    def _process(self, message): """ Received message processing.
-    As an example for class debugging purposes, we might use a basic log to store test messages (no more than 1000).
-    """
+    def _process(self, message): 
+        """ Received message processing.
+        As an example for class debugging purposes, we might use a basic log to store test messages (no more than 1000).
+        """
         self._DebugLog[datetime.datetime.now()] = str(message) #| Añadir al final del log.
         excess = max(0, len(self._DebugLog) - 100) #| Medir si hay un exceso de mensajes.
         self._DebugLog = self._DebugLog[excess :]  #| Conservar siempre los últimos 100.
