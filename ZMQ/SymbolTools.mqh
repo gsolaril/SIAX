@@ -3,7 +3,7 @@
 #property version   "1.0"
 #property strict
 
-#include <GSL/TimeTools.mqh>
+#include <TimeTools.mqh>
 
   //==========================================================================================//
  //  constants                                                                               //
