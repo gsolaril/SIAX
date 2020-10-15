@@ -1,8 +1,8 @@
-import os as os
-import numpy as numpy
-import pandas as pandas
-import time as time
-import matplotlib as matplotlib
+import os
+import numpy
+import pandas
+import time
+import matplotlib
 
 class Backtest:
 
