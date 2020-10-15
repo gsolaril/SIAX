@@ -78,12 +78,12 @@ class symbolist {
 //-------------------------------------------------------------- Actualizar datos guardados.
                 
         bool update(uchar slot) {
-        
             int frame = Frames[slot];
             if (frame == 0) { return(false); }
             bool by_tick = (frame < 0);
             frame = fabs(frame);  MqlTick Tick;
             string symbol = Enable[slot];
+            if (symbol == "") { return(false); }
             bool OK = SymbolInfoTick(symbol, Tick);
             if (!OK) { return(false); }
             double spread = Tick.ask - Tick.bid;
