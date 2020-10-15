@@ -3,7 +3,6 @@ import numpy
 import pandas
 import time
 import matplotlib
-import IPython
 
 class Backtest:
 
