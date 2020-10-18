@@ -85,15 +85,15 @@ class NeuralNetworkStrategy:
     para el cálculo del Stop Loss
     """
     
-      highest = max(Rows["High"])
-      lowest = min(Rows["Low"])
+    highest = max(Rows["High"])
+    lowest = min(Rows["Low"])
 
-      SL = 0
+    SL = 0
 
-      if Type > 0:
-        SL = lowest - np.abs(lowst) * 0.01
-      else:
-        SL = highest + np.abs(highest) * 0.01
+    if Type > 0:
+      SL = lowest - np.abs(lowst) * 0.01
+    else:
+      SL = highest + np.abs(highest) * 0.01
 
     return SL
 
