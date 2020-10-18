@@ -8,18 +8,19 @@ import csv
 import tensorflow as tf
 
 class NeuralNetworkStrategy:
-  """
-    Se puede heredar de esta clase y sobreescribirle cualquiera de los
-    siguientes métodos:
-  
-    * get_series_to_forecast: Cómo extraer la serie a partir de una Row.
-    * calculate_type_of_operation: Qué operación hacer
-    * calculate_stop_loss: Cómo setear el Stop Loss
-    * calculate_take_profit: Cómo setear el Take Profit
-    * calculate_indicators: Cómo obtener indicadores
-  """
 
   def __init__(self, model, OHLC = "Close"):
+    """
+      Se puede heredar de esta clase y sobreescribirle cualquiera de los
+      siguientes métodos:
+    
+      * get_series_to_forecast: Cómo extraer la serie a partir de una Row.
+      * calculate_type_of_operation: Qué operación hacer
+      * calculate_stop_loss: Cómo setear el Stop Loss
+      * calculate_take_profit: Cómo setear el Take Profit
+      * calculate_indicators: Cómo obtener indicadores
+    """
+
     self.model = model
     self.minRows = model.window_size + 2
     self.Indicators = []
