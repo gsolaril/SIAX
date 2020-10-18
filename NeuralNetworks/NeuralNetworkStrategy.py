@@ -7,17 +7,17 @@ import matplotlib.pyplot as plt
 import csv
 import tensorflow as tf
 
-class DeepLearningStrategy:
-"""
-  Se puede heredar de esta clase y sobreescribirle cualquiera de los
-  siguientes métodos:
-
-  * get_series_to_forecast: Cómo extraer la serie a partir de una Row.
-  * calculate_type_of_operation: Qué operación hacer
-  * calculate_stop_loss: Cómo setear el Stop Loss
-  * calculate_take_profit: Cómo setear el Take Profit
-  * calculate_indicators: Cómo obtener indicadores
-"""
+class NeuralNetworkStrategy:
+  """
+    Se puede heredar de esta clase y sobreescribirle cualquiera de los
+    siguientes métodos:
+  
+    * get_series_to_forecast: Cómo extraer la serie a partir de una Row.
+    * calculate_type_of_operation: Qué operación hacer
+    * calculate_stop_loss: Cómo setear el Stop Loss
+    * calculate_take_profit: Cómo setear el Take Profit
+    * calculate_indicators: Cómo obtener indicadores
+  """
 
   def __init__(self, model, OHLC = "Close"):
     self.model = model
