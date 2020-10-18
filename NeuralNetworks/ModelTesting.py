@@ -68,7 +68,7 @@ class ModelTesting:
     """
     
     # Obtengo la serie
-    time, series, split_size = get_test_dataset()
+    time, series, split_size = get_dataset()
     
     time_train, x_train, time_valid, x_valid = TimeSeriesUtils.split_dataset(time, series, split_size)
     
