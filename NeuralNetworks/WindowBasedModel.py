@@ -169,4 +169,4 @@ class WindowBasedModel:
 
 
   def save_model(self):
-    self.model.save_weights('/tmp/' + self.get_weights_name() + '.h5')
+    self.model.save_weights('./' + self.get_weights_name() + '.h5')
