@@ -90,6 +90,22 @@ class TimeSeriesUtils:
                   La serie de tiempo se va a basar en estos datos.
       """
 
+      df = TimeSeriesUtils.get_data_frame_from_yahoo(instrument, interval)
+
+      return TimeSeriesUtils.get_time_series_from_dataframe(df, column)
+
+
+    @staticmethod
+    def get_data_frame_from_yahoo(instrument = "AMZN", interval = "5m"):
+      """
+        Pide a Yahoo los datos del instrumento pasado por parámetro con la frecuencia indicada
+        y devuelve el datafram que obtuvo.
+
+        Keyword arguments:
+        instrument -- instrumento para el cual se quiere predecir
+        interval -- intervalo entre datapoints (1d, 5m, o 1m). Default: 5m.
+      """
+
       days_to_request = {
             '1d': 365,
             '5m': 59,
@@ -114,7 +130,7 @@ class TimeSeriesUtils:
       # Guardamos el resultado en un csv para no tener que volver a pedirlo
       df.to_csv("./" + instrument + "(" + interval + ")_yahoo.csv")
 
-      return get_time_series_from_dataframe(df, column)
+      return df
 
 
     @staticmethod

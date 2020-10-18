@@ -48,7 +48,7 @@ class ModelTesting:
     # Imprimo ambas series desde y hasta donde fue pedido
     from_t -= window_size
     to_t -= window_size
-    plot_series((time_1, diff_1), (time_1, forecast_1), from_t, to_t)
+    TimeSeriesUtils.plot_series((time_1, diff_1), (time_1, forecast_1), from_t, to_t)
 
   @staticmethod
   def test_model(model_constructor, get_dataset, window_size = 50, epochs = 50):

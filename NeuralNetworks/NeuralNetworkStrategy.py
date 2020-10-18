@@ -31,21 +31,21 @@ class NeuralNetworkStrategy:
 
     OT = OP = Type = Lot = SL = TP = None  ## Default: None.
 
-    series_to_forecast = get_series_to_forecast(Rows)
+    series_to_forecast = self.get_series_to_forecast(Rows)
 
     prediction = self.model.predict(series_to_forecast)[0]
 
-    Type = calculate_type_of_operation(prediction)
+    Type = self.calculate_type_of_operation(prediction)
 
     if Type:                                                 # Si compro o vendo...
       OT, Lot = Rows.index[-1], 1                            # Opening Time y Lote
       OP = Rows["Close"].iloc[-1]                            # La operación se ejecuta al cierre de vela.
 
-      SL = calculate_stop_loss(Rows, Type, prediction)
+      SL = self.calculate_stop_loss(Rows, Type, prediction)
 
-      TP = calculate_take_profit(Rows, Type, prediction, SL, OP)
+      TP = self.calculate_take_profit(Rows, Type, prediction, SL, OP)
 
-    Indicators = calculate_indicators(Rows, Type, prediction, SL, OP, TP)
+    Indicators = self.calculate_indicators(Rows, Type, prediction, SL, OP, TP)
 
     Signal = {"OT": OT, "OP": OP, "Type": Type, "Size": Lot, "SL": SL, "TP": TP}
 
@@ -92,7 +92,7 @@ class NeuralNetworkStrategy:
     SL = 0
 
     if Type > 0:
-      SL = lowest - np.abs(lowst) * 0.01
+      SL = lowest - np.abs(lowest) * 0.01
     else:
       SL = highest + np.abs(highest) * 0.01
 
