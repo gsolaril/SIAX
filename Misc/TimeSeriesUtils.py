@@ -130,6 +130,10 @@ class TimeSeriesUtils:
       # Guardamos el resultado en un csv para no tener que volver a pedirlo
       df.to_csv("./" + instrument + "(" + interval + ")_yahoo.csv")
 
+      del df['Datetime']
+      del df['Adj Close']
+      del df['Volume']
+
       return df
 
 

@@ -75,7 +75,7 @@ class NeuralNetworkStrategy:
     1 para comprar. -1 para vender. 0 para no hacer nada
     """
     
-    t = 1 if prediction > 0 else -1 if prediction < -0.1 else 0
+    t = 1 if prediction > 0 else -1 if prediction < -0.1 else None
 
     return t
 
