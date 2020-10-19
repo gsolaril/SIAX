@@ -83,7 +83,7 @@ class Backtest:
             self.Dataset.loc[t, "$"] = capital  # Tomo nota de capital actual.
             self.Dataset.loc[t, Ind] = Ind.values()  # Valores de indicadores.
             delay = 1000000*(time.time() - before)  # Delay en microsegundos.
-            self.Dataset.loc[t, "Delays"] = 1234#delay
+            self.Dataset.loc[t, "Delays"] = delay
             n_trade = 0  # Comienzo monitoreo de trades desde primera fila.
             while True:  # Mientras queden trades abiertos por monitorear...
                 try: Trade = self.Active.iloc[n_trade, :]  # Tomo info de trade.
