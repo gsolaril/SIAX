@@ -39,8 +39,9 @@ class TimeSeriesUtils:
 
       series = np.array(sunspots)
       time = np.array(time_step)
+
       plt.figure(figsize=(10, 6))
-      plot_series((time, series))
+      TimeSeriesUtils.plot_series((time, series))
 
       return time, series
 
