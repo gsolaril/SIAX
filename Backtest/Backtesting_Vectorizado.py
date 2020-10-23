@@ -5,9 +5,16 @@ import time
 import matplotlib
 
 class Backtest:
+    """
+    El parámetro verbose en el constructor configura cómo se muestra el avance del backtesting.
+    Puede tomar 3 valores:
+    	0: no se imprime nada
+    	1: se imprime una línea y se va pisando con el progreso
+    	2: se imprime una línea abajo de la otra
+    """
 
     ##########################################################################
-    def __init__(self, Dataset, deposit = 10000, PS = 0.01, PV = 1, minLot = 0.01):
+    def __init__(self, Dataset, deposit = 10000, PS = 0.01, PV = 1, minLot = 0.01, verbose=0):
         self.Deposit = deposit  # Capital inicial.
         self.Dataset = numpy.floor(Dataset.copy()/PS)*PS # Copia de dataset, redondeado a "PS".
         self.Dataset[["$", "Delays"]] = None # Nuevas columnas, a llenar durante el backtest.
@@ -16,6 +23,7 @@ class Backtest:
         self.Trades = pandas.DataFrame(columns = ["OT", "CT", "OP", "CP", "Type", "Lot",
                                                   "Cause", "Points", "Profit", "Return"])
         self.Allow_Sgn_Close = True
+        self.Verbose = verbose
 
     ##########################################################################
     def trade_open(self, signal, invest):  # "invest": máx USD a perder en SL.
@@ -69,9 +77,19 @@ class Backtest:
         self.Active = self.Active[0:0]  # Limpieza/reseteo de dataframe.
         self.Trades = self.Trades[0:0]  # Limpieza/reseteo de dataframe.
         self.Dataset[Strategy.Indicators] = None # Columnas para indicadores.
+
+        if self.Verbose:
+            loops = len(self.Dataset) - Strategy.minRows - 1
+            one_percent_size = int(np.round(loops / 100))
+            one_percent_size = 1 if one_percent_size == 0 else one_percent_size
+
         for nr in range(Strategy.minRows, len(self.Dataset)):
+
+            if self.Verbose:
+                self.audit(Strategy, nr, capital, one_percent_size)
+
             if (capital <= 0): break  # Si me quedo sin $$, no puedo seguir.
-            before = time.time()  # Tomo nota de la hora actual.
+            before = time	.time()  # Tomo nota de la hora actual.
             t = self.Dataset.index[nr]  # Fecha/hora de la fila actual "nr".
             t1 = self.Dataset.index[nr - 1] # Fecha/hora de la fila anterior.
             nr0 = nr - Strategy.minRows  # 1ª fila del bloque a dar a "call".
@@ -108,6 +126,36 @@ class Backtest:
             close = Row["Close"] # Tomo al último close como precio de cierre.
             capital = capital + self.trade_close(close, t, 0)
         self.Dataset.loc[t, "$"] = capital # Guardo al capital final.
+
+
+    ##########################################################################
+
+    def audit(self, strategy, nr, capital, one_percent_size):
+
+      # Inormación básica
+      min_rows = strategy.minRows
+      total_rows = len(self.Dataset) - min_rows
+      current_idx = nr + 1 - min_rows
+
+      # Sólo logeamos una vez cada porcentaje
+      if (current_idx % one_percent_size) != 0:
+        return;
+
+      # Datos del progreso
+      percent = int(np.round(current_idx * 100 / total_rows))
+      percent_string = str(percent) + '%'
+      detaled_progress = '(' + str(current_idx) + ' de ' + str(total_rows) + ')'
+
+      # Datos de los trades
+      trades = str(self.Trades.shape[0])
+      capital_string = '{:0.2f}'.format(capital)
+
+      # Según el nivel de verbose pisamos la línea de audit o la agregamos abajo
+      newline = "\r" if self.Verbose == 1 else "\n"
+
+      print(newline + 'Se completó el ' + percent_string + detaled_progress +'. '
+                    + 'Trades hasta el momento: ' + trades + '. '
+                    + 'Capital: ' + capital_string, end="")
 
     ##########################################################################
     def plot(self, indicators = True, capital = True,
