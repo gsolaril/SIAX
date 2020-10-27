@@ -1,3 +1,4 @@
+import os
 import os.path
 import pandas as pd
 
@@ -118,8 +119,13 @@ class MarketDataRepository:
     Si hay carpeta de cache configurada, guarda el archivo ahí.
     """
 
-    # Armo el nombre del archivo por si tengo una carpeta para cache de archivos
+    # Armo el nombre del archivo dentro de la carpeta para cache de archivos
     if self._dataset_cache_url:
+
+      # Me aseguro de que exista la carpeta
+      if not os.path.exists(self._dataset_cache_url):
+        os.makedirs(self._dataset_cache_url)
+
       cached_file_name = self._dataset_cache_url + '/' + csv_file + '.csv'
 
     # Si tengo cache y además un archivo con el nombre correspondiente
