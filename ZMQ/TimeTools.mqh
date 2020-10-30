@@ -7,7 +7,7 @@
     void GetSystemTime(int& TimeArray[]);
 #import
 
-extern uchar Broker_TZ = +3;     // Cantidad de horas entre horario local y broker.
+extern uchar Broker_TZ = +3;     // Zona horaria de broker (GMT __).
 
 short GMT_LOCAL = TimeLocal() - TimeGMT();
 short GMT_BROKER = Broker_TZ*60*60;

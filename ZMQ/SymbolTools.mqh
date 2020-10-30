@@ -31,8 +31,8 @@ class symbolist {
     public:
     
         string Enable[];
-        ulong Counts[];
-        int Frames[];
+        double Counts[];
+        double Frames[];
         double Memory[][8];
         
 //----------------------------------------------------------------------------- Constructor.
@@ -48,15 +48,15 @@ class symbolist {
             
 //-------------------------------------------------------------------- Cargador de simbolos.
                 
-        ushort enable(string symbol, int frame, char slot) {
+        ushort enable(string symbol, double tf, char slot) {
         
             if ((slot < 0) || (ArraySize(Enable) <= slot)) { return(4002); }
             if (symbol == "") {
                 Frames[slot] = 0;   Enable[slot] = "";
                 Counts[slot] = 0;   return(1); }
-            for (uchar s = 0; s < SymbolsTotal(false); s++) {
-                if (SymbolName(s, false) != symbol) { continue; } 
-                Enable[slot] = symbol;  Frames[slot] = frame;  return(1); }
+            for (uchar s = 0; s < SymbolsTotal(true); s++) {
+                if (SymbolName(s, true) != symbol) { continue; }
+                Enable[slot] = symbol;  Frames[slot] = tf;  return(1); }
             return(4106); }
             
 //-------------------------------------------------------------------- Buscador de simbolos.
@@ -78,38 +78,36 @@ class symbolist {
 //-------------------------------------------------------------- Actualizar datos guardados.
                 
         bool update(uchar slot) {
-            int frame = Frames[slot];
-            if (frame == 0) { return(false); }
-            bool by_tick = (frame < 0);
-            frame = fabs(frame);  MqlTick Tick;
+            double tf = Frames[slot];
+            if (tf == 0) { return(false); }
             string symbol = Enable[slot];
             if (symbol == "") { return(false); }
-            bool OK = SymbolInfoTick(symbol, Tick);
-            if (!OK) { return(false); }
-            double spread = Tick.ask - Tick.bid;
-            double price = Tick.bid;
+            double A = SymbolInfoDouble(symbol, SYMBOL_ASK);
+            double B = SymbolInfoDouble(symbol, SYMBOL_BID);
+            long V = SymbolInfoInteger(symbol, SYMBOL_VOLUME);
             if (Counts[slot] == 0) {
-                if (by_tick) { Counts[slot] = frame; }
-                else { Counts[slot] = NOW() + frame; }
-                Memory[slot][0] = NOW();
-                Memory[slot][1] = price;
-                Memory[slot][2] = price;
-                Memory[slot][3] = price;
-                Memory[slot][4] = price;
-                Memory[slot][5] = Tick.volume;
-                Memory[slot][6] = spread; }
+                if (tf < 0) {
+                    Counts[slot] = tf;
+                    Memory[slot][0] = NOW(); }
+                else {
+                    long units = floor(NOW()/tf);
+                    Counts[slot] = tf*(units + 1);
+                    Memory[slot][0] = tf*units; }
+                Memory[slot][1] = B;  Memory[slot][4] = B;
+                Memory[slot][2] = B;  Memory[slot][5] = 1;
+                Memory[slot][3] = B;  Memory[slot][6] = A - B; }
             else {
-                Memory[slot][5] += Tick.volume;
-                Memory[slot][2] = fmax(Memory[slot][2], price);
-                Memory[slot][3] = fmin(Memory[slot][3], price);
-                Memory[slot][6] = fmax(Memory[slot][6], spread); }
+                Memory[slot][5] += 1;
+                Memory[slot][2] = fmax(Memory[slot][2], B);
+                Memory[slot][3] = fmin(Memory[slot][3], B);
+                Memory[slot][6] = fmax(Memory[slot][6], A - B); }
             bool restart;
-            if (by_tick) {
-                restart = (--Counts[slot] == 0); }
+            if (tf < 0) {
+                restart = (++Counts[slot] == 0); }
             else {
                 restart = (NOW() >= Counts[slot]); }
             if (!restart) { return(false); }
-            Memory[slot][4] = price;
+            Memory[slot][4] = B;
             Counts[slot] = 0;
             return(true); }
             
@@ -128,25 +126,23 @@ class symbolist {
         
 //-------------------------------------------------------- Imprimir vela parcial en consola.
 
-        void report() {
+        void spy(uchar slot) {
         
-            string row = "Memory Report '%s': {'F': %d, 'C': %s, 'T': %s,"
-                 + "'O': %s, 'H': %s, 'L': %s, 'C': %s, 'V': %d, 'S': %s}";
-            for (uchar slot = 0; slot < ArraySize(Enable); slot++) {
-                string symbol = Enable[slot];
-                if (symbol == "") { continue; }
-                double c = Counts[slot];
-                int frame = Frames[slot];
-                bool by_tick = (frame < 0);
-                double time = Memory[slot][0];
-                string T = TimeDoubleToString(time);
-                string count = TimeDoubleToString(c);
-                if (by_tick) { count = IntegerToString(c); }
-                uchar digits = MarketInfo(symbol, MODE_DIGITS);
-                string O = DoubleToString(Memory[slot][1], digits);
-                string H = DoubleToString(Memory[slot][2], digits);
-                string L = DoubleToString(Memory[slot][3], digits);
-                string C = DoubleToString(Memory[slot][4], digits);
-                string V = DoubleToString(Memory[slot][5], digits);
-                string S = DoubleToString(Memory[slot][6], digits);
-                PrintFormat(row, symbol, frame, count, T, O, H, L, C, V, S); } } };
+            string symbol = Enable[slot];   if (symbol == "") return;
+            int frame = Frames[slot];       if (frame == 0) return;
+            string row = "Memory Report '%s': {'F': %d, 'T': %s, 'O': %s, "
+                 + "'H': %s, 'L': %s, 'C': %s, 'V': %d, 'S': %s}. Next: %s";
+            double c = Counts[slot];
+            bool by_tick = (frame < 0);
+            double time = Memory[slot][0];
+            string T = TimeDoubleToString(time);
+            string count = TimeDoubleToString(c);
+            if (by_tick) { count = IntegerToString(c); }
+            uchar digits = MarketInfo(symbol, MODE_DIGITS);
+            string O = DoubleToString(Memory[slot][1], digits);
+            string H = DoubleToString(Memory[slot][2], digits);
+            string L = DoubleToString(Memory[slot][3], digits);
+            string C = DoubleToString(Memory[slot][4], digits);
+            string V = DoubleToString(Memory[slot][5], digits);
+            string S = DoubleToString(Memory[slot][6], digits);
+            PrintFormat(row, symbol, frame, T, O, H, L, C, V, S, count); } };

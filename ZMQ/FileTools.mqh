@@ -52,40 +52,27 @@ int CSVspecs(ENUM_MARKETINFO &specs[]) {
     
 // ----------------------------------------------------------- Descarga de datos de mercado.
 
-int CSVdata(string symbol, uchar frame, datetime t1, datetime t2, bool format = true) {
+long CSVdata(string symbol, ENUM_TIMEFRAMES tf, uint rows) {
     
-    int n_rows = -1;
-    MqlRates OHLCV[];
-    string frame_tag = EnumToString((ENUM_TIMEFRAMES) frame);
-    frame_tag = StringSubstr(frame_tag, StringLen("PERIOD_"));
-    for (int n_try = 0; n_try < 10; n_try++) {
-            ResetLastError();
-            n_rows = CopyRates(symbol, frame, t1, t2, OHLCV);
-            bool OK = (_LastError != 4066) && (_LastError != 4073);
-            if ((n_rows > 0) || OK) { break; } else { Sleep(100); } }
-    if (n_rows <= 0) { return(-_LastError); }
-    n_rows = ArraySize(OHLCV);
+    rows = fmin(iBars(symbol, tf), rows);
     double point = MarketInfo(symbol, MODE_POINT);
     uchar digits = MarketInfo(symbol, MODE_DIGITS);
     uchar spread = MarketInfo(symbol, MODE_SPREAD);
-    int fileWrite = CSVnew("OHLCV\\" + symbol + ((format)?
-                  StringFormat(" %s %s %s.csv", frame_tag,
-                  TimeToString(t1), TimeToString(t2)) :
-                  StringFormat(" %d %d %d.csv", frame, t1, t2)));
-    for (ushort n_row = 0; n_row < n_rows; n_row++) {
-        string timestamp = (format)? TimeToString(OHLCV[n_row].time)
-                                : IntegerToString(OHLCV[n_row].time);
-        int written = FileWrite(fileWrite, StringFormat(
-                   "%s,%s,%s,%s,%s,%d,%d,%s", timestamp,
-             DoubleToString(OHLCV[n_row].open,  digits),
-             DoubleToString(OHLCV[n_row].high,  digits),
-             DoubleToString(OHLCV[n_row].low,   digits),
-             DoubleToString(OHLCV[n_row].close, digits),
-             IntegerToString(OHLCV[n_row].real_volume),
-             IntegerToString(OHLCV[n_row].tick_volume),
-             DoubleToString(spread*point, digits))); }
-        FileClose(fileWrite);
-        return(n_rows); }
+    datetime t1 = 0, t2 = iTime(symbol, tf, 1);
+    string name = "OHLCV\\%s %d %d %d.csv";
+    while (t1 == 0) { t1 = iTime(symbol, tf, rows--); }
+    if ((rows == 0) || (t2 == 0)) { return(-_LastError); }
+    int file = CSVnew(StringFormat(name, symbol, 60*tf, t1, t2));
+    int W = FileWrite(file, "Open,High,Low,Close,Volume,Spread");
+    while (--rows) {
+        W = FileWrite(file, TimeToString(iTime  (symbol, tf, rows))
+          + "," + DoubleToString(iOpen  (symbol, tf, rows), digits)
+          + "," + DoubleToString(iHigh  (symbol, tf, rows), digits) 
+          + "," + DoubleToString(iLow   (symbol, tf, rows), digits) 
+          + "," + DoubleToString(iClose (symbol, tf, rows), digits) 
+          + "," + DoubleToString(iVolume(symbol, tf, rows), digits) 
+          + "," + DoubleToString(spread*point, digits)); }
+    FileClose(file); return(t1); }
 
 // --------------------------------------------------- Descarga de historial de operaciones.
 
