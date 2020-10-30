@@ -96,9 +96,14 @@ class TrainingSession:
     if not os.path.exists(this_result_folder):
       os.makedirs(this_result_folder)
 
-    # En esa carpeta guardo la market data que usé
+    # En esa carpeta guardo la market data que usé para el training
     with open(path.join(this_result_folder, "training_market_data.txt"), "w") as text_file:
       text_file.write(self._training_market_data.describe())
+
+    if self._backtesting_market_data:
+      # En esa carpeta guardo la market data que usé para el backtesting
+      with open(path.join(this_result_folder, "backtesting_market_data.txt"), "w") as text_file:
+        text_file.write(self._backtesting_market_data.describe())
 
     # Guardo también el modelo que usé
     self._model.save_model(this_result_folder)
