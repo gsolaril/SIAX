@@ -138,8 +138,8 @@ class WindowBasedModel:
     model_json = self.model.to_json()
 
     # Guardo el modelo en formato JSON
-    with open(path.join(directory, self.get_weights_name() + ".json"), "w") as json_file:
+    with open(path.join(directory, self.get_model_name() + ".json"), "w") as json_file:
         json_file.write(model_json)
 
     # Guardo los pesos en un archivo .h5
-    self.model.save_weights(path.join(directory, self.get_weights_name() + '.h5'))
+    self.model.save_weights(path.join(directory, self.get_model_name() + '.h5'))
