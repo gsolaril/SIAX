@@ -1,6 +1,7 @@
 import os
 import os.path
 import pandas as pd
+from MarketData import MarketData
 
 class MarketDataRepository:
   """
@@ -94,7 +95,8 @@ class MarketDataRepository:
       data = data.head(rows)
 
     # data tiene ahora las primeras 'rows' filas desde 'start_date' en adelante
-    return data
+    # MarketData encapsula el dataset y toda su metadata
+    return MarketData(symbol, frequency, start_date, rows, data)
 
 
   def get_available_dataset_list(self):

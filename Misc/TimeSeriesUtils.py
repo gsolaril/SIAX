@@ -174,7 +174,7 @@ class TimeSeriesUtils:
       """
 
       if split_time is None:
-        split_time = len(time) * 10 // 8
+        split_time = len(time) * 8 // 10
 
       time_train = time[:split_time]
       x_train = series[:split_time]
@@ -183,3 +183,44 @@ class TimeSeriesUtils:
       x_valid = series[split_time:]
 
       return time_train, x_train, time_valid, x_valid
+
+    @staticmethod
+    def get_percentage_difference_series(series):
+      """
+        A partir de una serie original S con distintos valores en cada t
+        devuelve una serie D con una longitud de una unidad menos
+        donde D[t] = ( S[t] - S[t-1] ) * 100 / S[t-1]
+      
+        Keyword arguments:
+        series -- serie a la que se le pretende calcular la diferencia
+      """
+      
+      # A cada elemento se le resta el que está en la posición anterior
+      # y se lo divide por el valor anterior.
+      # Después se lo multiplica por 100
+      # D[0] = ( S[1] - S[0] ) * 100 / S[0]
+      # D[1] = ( S[2] - S[1] ) * 100 / S[1]
+
+      diff = ((series[1:] - series[:-1]) * 100 + 1e-10) / (series[:-1] + 1e-10)
+      
+      return diff
+
+    @staticmethod
+    def get_difference_series(series):
+      """
+        A partir de una serie original S con distintos valores en cada t
+        devuelve una serie D con una longitud de una unidad menos
+        donde D[t] = S[t] - S[t-1]
+
+        Keyword arguments:
+        series -- serie a la que se le pretende calcular la diferencia
+      """
+
+      # A cada elemento se le resta el que está en la posición anterior.
+      # D[0] = S[1] - S[0]
+      # D[1] = S[2] - S[1]
+      diff = series[1:] - series[:-1]
+
+      # Finalmente le agregamos un 0 al principio porque el primer día no sabemos
+      # cuánto aumentó y no calculamos la diferencia
+      return diff
