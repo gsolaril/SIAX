@@ -1,5 +1,8 @@
 import os
+import time
+import numpy as np
 from os import path
+from Backtesting_Vectorizado import Backtest
 
 class TrainingSession:
   """
@@ -104,5 +107,6 @@ class TrainingSession:
     np.savetxt(path.join(this_result_folder, "validation_set.txt"), self._valid, delimiter=",")
     np.savetxt(path.join(this_result_folder, "prediction.txt"), self._forecast, delimiter=",")
 
-    if self._backtest and self._backtest.stats():
-      self._backtest.stats().to_csv(path.join(this_result_folder, "backtesting_statistics.csv"))
+    if self._backtest:
+      if not self._backtest.stats().empty:
+        self._backtest.stats().to_csv(path.join(this_result_folder, "backtesting_statistics.csv"))
