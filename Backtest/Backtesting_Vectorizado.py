@@ -80,7 +80,7 @@ class Backtest:
 
         if self.Verbose:
             loops = len(self.Dataset) - Strategy.minRows - 1
-            one_percent_size = int(np.round(loops / 100))
+            one_percent_size = int(numpy.round(loops / 100))
             one_percent_size = 1 if one_percent_size == 0 else one_percent_size
 
         for nr in range(Strategy.minRows, len(self.Dataset)):
@@ -142,7 +142,7 @@ class Backtest:
         return;
 
       # Datos del progreso
-      percent = int(np.round(current_idx * 100 / total_rows))
+      percent = int(numpy.round(current_idx * 100 / total_rows))
       percent_string = str(percent) + '%'
       detaled_progress = '(' + str(current_idx) + ' de ' + str(total_rows) + ')'
 
