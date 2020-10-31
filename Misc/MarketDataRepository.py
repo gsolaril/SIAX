@@ -1,7 +1,7 @@
 import os
 import os.path
 import pandas as pd
-from MarketData import MarketData
+from SIAX.Misc.MarketData import MarketData
 
 class MarketDataRepository:
   """

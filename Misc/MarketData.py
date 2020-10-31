@@ -1,4 +1,4 @@
-from TimeSeriesUtils import TimeSeriesUtils
+from SIAX.Misc.TimeSeriesUtils import TimeSeriesUtils
 
 class MarketData:
 

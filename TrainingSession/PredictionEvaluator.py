@@ -1,6 +1,6 @@
 import numpy as np
-from TimeSeriesUtils import TimeSeriesUtils
-from PredictionEvaluation import PredictionEvaluation
+from SIAX.Misc.TimeSeriesUtils import TimeSeriesUtils
+from SIAX.TrainingSession.PredictionEvaluation import PredictionEvaluation
 
 class PredictionEvaluator:
   """

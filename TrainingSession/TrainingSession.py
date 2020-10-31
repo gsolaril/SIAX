@@ -2,7 +2,8 @@ import os
 import time
 import numpy as np
 from os import path
-from Backtesting_Vectorizado import Backtest
+from SIAX.Backtest.Backtesting_Vectorizado import Backtest
+from SIAX.TrainingSession.PredictionEvaluator import PredictionEvaluator
 
 class TrainingSession:
   """

@@ -1,11 +1,4 @@
-import os
 import numpy as np
-import pandas as pd
-import yfinance as yf
-import keras as k
-import datetime as dt
-import matplotlib.pyplot as plt
-import csv
 import tensorflow as tf
 from keras.models import model_from_json
 from os import path
