@@ -1,6 +1,8 @@
 import os
 import time
 import numpy as np
+import datetime
+from datetime import timedelta
 from os import path
 from SIAX.Backtest.Backtesting_Vectorizado import Backtest
 from SIAX.TrainingSession.PredictionEvaluator import PredictionEvaluator
@@ -137,7 +139,7 @@ class TrainingSession:
     De esta manera, ante el menor cambio generamos resultados en un directorio distinto
     y no perdemos el output de ningún training o testing.
     """
-    self._identifier = str(int(time.time() * 10000))
+    self._identifier = f"{(datetime.datetime.now() + timedelta(hours=-3)):%Y%m%d%H%M%S%f}"
 
 
   def __persist__(self):
@@ -190,6 +192,18 @@ class TrainingSession:
     if self._backtest and not self._backtest.stats().empty:
       self._backtest.stats().to_csv(path.join(this_result_folder, "backtesting_statistics.csv"))
 
+    with open(path.join(this_result_folder, "stats.csv"), "w") as text_file:
+        text_file.write(self._get_stats())
+
+  def _get_stats(self):
+    dt = f"{(datetime.datetime.now() + timedelta(hours=-3)):%Y-%m-%d %H:%M:%S}"
+    mae = self._evaluation.mae
+    mse = self._evaluation.mse
+    correct_direction = self._evaluation.correct_direction
+    validation_size = self._valid.shape[0]
+
+    return f"DateTime,MAE,MSE,Validation Size,Correct Direction\n" + \
+      f"{dt},{mae},{mse},{validation_size},{correct_direction}"
 
   def __persisst_arrays__(self, directory):
     """

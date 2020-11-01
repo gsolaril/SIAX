@@ -31,16 +31,18 @@ class PredictionEvaluator:
     """
 
     # Calculo el Mean Absolute Error
-    mae = self._calculate_mae(self._validation, self._prediction)
+    mae = self._calculate_mae()
 
     # Calculo el Mean Squared Error
-    mse = self._calculate_mse(self._validation, self._prediction)
+    mse = self._calculate_mse()
+
+    correct_direction = self._calculate_correct_direction()
 
     # Obtengo el gráfico que compara ambas series
     plot = self._get_plot()
 
     # Devuelvo un PredictionEvaluation con todos los cálculos
-    return PredictionEvaluation(mae, mse, plot)
+    return PredictionEvaluation(mae, mse, correct_direction, plot)
 
 
   def _get_plot(self):
@@ -54,15 +56,25 @@ class PredictionEvaluator:
     return TimeSeriesUtils.get_plot_series([t_s_prediction, t_s_validation])
 
 
-  def _calculate_mae(self, validation, prediction):
+  def _calculate_mae(self):
     """
     Calcula el Mean Absolute Error
     """
-    return np.sum(np.abs(validation-prediction)) / prediction.shape[0]
+    return np.sum(np.abs(self._validation - self._prediction)) / self._prediction_size
 
 
-  def _calculate_mse(self, validation, prediction):
+  def _calculate_mse(self):
     """
     Calcula el Mean Squared Error
     """
-    return np.sum((validation-prediction) ** 2) / prediction.shape[0]
+    return np.sum((self._validation - self._prediction) ** 2) / self._prediction_size
+
+  def _calculate_correct_direction(self):
+    """
+    Devuelve el porcentaje de veces que acertó la dirección
+    en que la serie se mueve. Es decir si predijo que subía y subió
+    o si predijo que bajaba y bajó.
+
+    Si predijo 0 o el real fue 0, no lo toma como válido.
+    """
+    return np.sum((self._prediction  * self._validation) > 0) * 100 / self._prediction_size

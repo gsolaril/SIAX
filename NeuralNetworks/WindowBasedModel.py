@@ -38,6 +38,9 @@ class WindowBasedModel:
 
     return forecast[:-1, -1, 0]
 
+  def build_model(self):
+
+    assert False, "Se debe implementar el método build_model en las sublases de WindowBasedModel"
 
   def describe(self):
     return "Esta usa un tamaño de ventana {0} y un LR: {1}".format(self.window_size, self.lr)
