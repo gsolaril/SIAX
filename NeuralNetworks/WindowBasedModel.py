@@ -1,16 +1,11 @@
-import os
 import numpy as np
-import pandas as pd
-import yfinance as yf
-import keras as k
-import datetime as dt
-import matplotlib.pyplot as plt
-import csv
 import tensorflow as tf
+from keras.models import model_from_json
+from os import path
 
 class WindowBasedModel:
 
-  def __init__(self, window_size = 50, epochs = 500, batch_size = 100):
+  def __init__(self, window_size = 50, epochs = 500, batch_size = 100, transform_series = None):
 
     self.window_size = window_size
     self.batch_size = batch_size
@@ -19,71 +14,36 @@ class WindowBasedModel:
     self.random_seed = 51
     self.momentum = 0.9
     self.metrics = ["mae", "mse"]
+    self.transform_series = transform_series
 
     
   def train(self, train_series):
     """
       Entrena el modelo con la serie del parámetro.
     """
+    if self.transform_series:
+      train_series = self.transform_series(train_series)
 
-    diff_series = self.get_difference_series(train_series)
-    train_set = self.to_windowed_dataset(diff_series)
+    train_set = self.to_windowed_dataset(train_series)
     self.build_model()
     self.reset_backend()
     self.history = self.model.fit(train_set,epochs=self.epochs)
 
 
   def predict(self, test_series):
-    diff_series = self.get_difference_series(test_series)
-    forecast = self.model_forecast(diff_series)
+    if self.transform_series:
+      test_series = self.transform_series(test_series)
+
+    forecast = self._model_forecast(test_series)
 
     return forecast[:-1, -1, 0]
 
+  def build_model(self):
+
+    assert False, "Se debe implementar el método build_model en las sublases de WindowBasedModel"
 
   def describe(self):
     return "Esta usa un tamaño de ventana {0} y un LR: {1}".format(self.window_size, self.lr)
-
-
-  def get_percentage_difference_series(self, series):
-    """
-      A partir de una serie original S con distintos valores en cada t
-      devuelve una serie D con una longitud de una unidad menos
-      donde D[t] = ( S[t] - S[t-1] ) / S[t-1]
-    
-      Keyword arguments:
-      series -- serie a la que se le pretende calcular la diferencia
-    """
-    
-    # A cada elemento se le resta el que está en la posición anterior
-    # y se lo divide por el valor anterior.
-    # D[0] = ( S[1] - S[0] ) / S[0]
-    # D[1] = ( S[2] - S[1] ) / S[1]
-    diff = (series[1:] - series[:-1]) / series[:-1]
-    
-    # Finalmente le agregamos un 0 al principio porque el primer día no sabemos
-    # cuánto aumentó y no calculamos la diferencia
-    return diff
-
-
-  def get_difference_series(self, series):
-    """
-      A partir de una serie original S con distintos valores en cada t
-      devuelve una serie D con una longitud de una unidad menos
-      donde D[t] = S[t] - S[t-1]
-
-      Keyword arguments:
-      series -- serie a la que se le pretende calcular la diferencia
-    """
-
-    # A cada elemento se le resta el que está en la posición anterior.
-    # D[0] = S[1] - S[0]
-    # D[1] = S[2] - S[1]
-    diff = series[1:] - series[:-1]
-
-    # Finalmente le agregamos un 0 al principio porque el primer día no sabemos
-    # cuánto aumentó y no calculamos la diferencia
-    return diff
-
 
   def to_windowed_dataset(self, series):
     """
@@ -135,7 +95,7 @@ class WindowBasedModel:
     np.random.seed(self.random_seed)
 
 
-  def model_forecast(self, series):
+  def _model_forecast(self, series):
     """
       Para cada window_size elementos de series predice el siguiente valor
       utilizando el modelo "model"
@@ -168,5 +128,14 @@ class WindowBasedModel:
     return forecast
 
 
-  def save_model(self):
-    self.model.save_weights('./' + self.get_weights_name() + '.h5')
+  def save_model(self, directory = '.'):
+
+    # Serializo el modelo en un JSON
+    model_json = self.model.to_json()
+
+    # Guardo el modelo en formato JSON
+    with open(path.join(directory, self.get_model_name() + ".json"), "w") as json_file:
+        json_file.write(model_json)
+
+    # Guardo los pesos en un archivo .h5
+    self.model.save_weights(path.join(directory, self.get_model_name() + '.h5'))

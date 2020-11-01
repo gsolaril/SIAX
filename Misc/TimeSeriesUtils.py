@@ -1,8 +1,6 @@
 import os
 import numpy as np
 import pandas as pd
-import yfinance as yf
-import keras as k
 import datetime as dt
 import matplotlib.pyplot as plt
 import csv
@@ -77,6 +75,38 @@ class TimeSeriesUtils:
       
       plt.show()
 
+    @staticmethod
+    def get_plot_series(time_series_list, start=0, end=None, figsize=(30, 6), format="-"):
+      """
+        Devuelve un gráfico conteniendo todas las series de tiempo pasadas por parámetro.
+        Recibe una lista de series de tiempo además desde dónde y hasta dónde incluir la serie.
+        Por defecto el gráfico incluye a toda la serie.
+
+        Devuelve el gráfico.
+
+        Keyword arguments:
+        time_series_list: lista de series de tiempo de la forma (tiempo, serie)
+        start: la primera posición de la serie a incluir en el gráfico. Por defecto 0
+        end: la última posición de la serie a incluir en el gráfico. Por defecto None
+        figsize: tamaño del gráfico
+      """
+
+      # Inicializo del gráfico
+      plt.figure(figsize=figsize)
+      plt.xlabel("Time")
+      plt.ylabel("Value")
+      plt.grid(True)
+
+      for time_series in time_series_list:
+
+        # Desarmo la tupla
+        time, series = time_series
+
+        # Agrego el plot
+        plt.plot(time[start:end], series[start:end], format)
+
+      return plt
+
 
     @staticmethod
     def get_time_series_from_yahoo(instrument = "AMZN", interval = "5m", column = "Close"):
@@ -97,12 +127,19 @@ class TimeSeriesUtils:
 
 
     @staticmethod
-    def get_data_frame_from_yahoo(instrument = "AMZN", interval = "5m"):
+    def get_data_frame_from_yahoo(yf_download, instrument = "AMZN", interval = "5m"):
       """
         Pide a Yahoo los datos del instrumento pasado por parámetro con la frecuencia indicada
         y devuelve el datafram que obtuvo.
 
+        Para no tener una dependencia con Yahoo Finance en esta clase, el primer parámetro que recibe
+        esta función es la función de Yahoo Finance para obtener un dataset.
+
+        La manera de invocar esta función es, por ejemplo:
+          get_data_frame_from_yahoo(yfinance.download, "AMZN", "5m")
+
         Keyword arguments:
+        yf_download -- La función download de Yahoo Finance
         instrument -- instrumento para el cual se quiere predecir
         interval -- intervalo entre datapoints (1d, 5m, o 1m). Default: 5m.
       """
@@ -121,7 +158,7 @@ class TimeSeriesUtils:
       delta = dt.timedelta(days = max_dias)
 
       # Llamada a Yahoo: Desde lo más antiguo que podamos hasta hoy
-      df = yf.download(tickers = [instrument], interval = interval,
+      df = yf_download(tickers = [instrument], interval = interval,
                                  end = hoy, start = hoy - delta)
 
       # Nos quedamos sólo con la columna que se pidió y reseteamos el índice
@@ -129,7 +166,7 @@ class TimeSeriesUtils:
       df = df.reset_index()
 
       # Guardamos el resultado en un csv para no tener que volver a pedirlo
-      df.to_csv("./" + instrument + "(" + interval + ")_yahoo.csv")
+      df.to_csv("" + instrument + "(" + interval + ")_yahoo.csv")
 
       del df['Datetime']
       del df['Adj Close']
@@ -174,7 +211,7 @@ class TimeSeriesUtils:
       """
 
       if split_time is None:
-        split_time = len(time) * 10 // 8
+        split_time = len(time) * 8 // 10
 
       time_train = time[:split_time]
       x_train = series[:split_time]
@@ -183,3 +220,44 @@ class TimeSeriesUtils:
       x_valid = series[split_time:]
 
       return time_train, x_train, time_valid, x_valid
+
+    @staticmethod
+    def get_percentage_difference_series(series):
+      """
+        A partir de una serie original S con distintos valores en cada t
+        devuelve una serie D con una longitud de una unidad menos
+        donde D[t] = ( S[t] - S[t-1] ) * 100 / S[t-1]
+      
+        Keyword arguments:
+        series -- serie a la que se le pretende calcular la diferencia
+      """
+      
+      # A cada elemento se le resta el que está en la posición anterior
+      # y se lo divide por el valor anterior.
+      # Después se lo multiplica por 100
+      # D[0] = ( S[1] - S[0] ) * 100 / S[0]
+      # D[1] = ( S[2] - S[1] ) * 100 / S[1]
+
+      diff = ((series[1:] - series[:-1]) * 100 + 1e-10) / (series[:-1] + 1e-10)
+      
+      return diff
+
+    @staticmethod
+    def get_difference_series(series):
+      """
+        A partir de una serie original S con distintos valores en cada t
+        devuelve una serie D con una longitud de una unidad menos
+        donde D[t] = S[t] - S[t-1]
+
+        Keyword arguments:
+        series -- serie a la que se le pretende calcular la diferencia
+      """
+
+      # A cada elemento se le resta el que está en la posición anterior.
+      # D[0] = S[1] - S[0]
+      # D[1] = S[2] - S[1]
+      diff = series[1:] - series[:-1]
+
+      # Finalmente le agregamos un 0 al principio porque el primer día no sabemos
+      # cuánto aumentó y no calculamos la diferencia
+      return diff
