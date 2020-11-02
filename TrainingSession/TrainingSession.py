@@ -55,12 +55,6 @@ class TrainingSession:
     # queremos guardarlas, seteando este parámetro en True, se guradan en un csv
     self._save_predictions = save_full_predictions
 
-    # Opcionalmente se puede transformar el validation set
-    # En general vamos a estimar la diferencia en los valores de la serie
-    # y no los valores en sí. Acá transformamos la serie de ese modo.
-    if self._model.transform_series:
-      self._valid = self._model.transform_series(self._valid)
-
     # Para Backtesting
     self._backtesting_market_data = None
     self._backtesting_strategy = None
@@ -86,8 +80,15 @@ class TrainingSession:
     # Luego predigo en base al validation set
     self._forecast = self._model.predict(self._valid)
 
+    valid_compare = self._valid
+    # Opcionalmente se puede transformar el validation set
+    # En general vamos a estimar la diferencia en los valores de la serie
+    # y no los valores en sí. Acá transformamos la serie de ese modo.
+    if self._model.transform_series:
+      valid_compare = self._model.transform_series(valid_compare)
+
     # Creo un evaluador para la serie de validación y la predicción
-    evaluator = PredictionEvaluator(self._valid, self._forecast)
+    evaluator = PredictionEvaluator(valid_compare, self._forecast)
 
     # Guardo la evaluación de la predicción.
     self._evaluation = evaluator.evaluate()
@@ -139,7 +140,7 @@ class TrainingSession:
     De esta manera, ante el menor cambio generamos resultados en un directorio distinto
     y no perdemos el output de ningún training o testing.
     """
-    self._identifier = f"{(datetime.datetime.now() + timedelta(hours=-3)):%Y%m%d%H%M%S%f}"
+    self._identifier = f"{(datetime.datetime.now(datetime.timezone.utc) + timedelta(hours=-3)):%Y%m%d%H%M%S%f}"
 
 
   def __persist__(self):
@@ -196,14 +197,16 @@ class TrainingSession:
         text_file.write(self._get_stats())
 
   def _get_stats(self):
-    dt = f"{(datetime.datetime.now() + timedelta(hours=-3)):%Y-%m-%d %H:%M:%S}"
+    dt = f"{(datetime.datetime.now(datetime.timezone.utc) + timedelta(hours=-3)):%Y-%m-%d %H:%M:%S}"
     mae = self._evaluation.mae
     mse = self._evaluation.mse
     correct_direction = self._evaluation.correct_direction
     validation_size = self._valid.shape[0]
+    identifier = self._identifier
+    training_data = self._training_market_data.summary()
 
-    return f"DateTime,MAE,MSE,Validation Size,Correct Direction\n" + \
-      f"{dt},{mae},{mse},{validation_size},{correct_direction}"
+    return f"Identifier,DateTime,TrainingData,MAE,MSE,Validation Size,Correct Direction\n" + \
+      f"{identifier},{dt},{training_data},{mae},{mse},{validation_size},{correct_direction}"
 
   def __persisst_arrays__(self, directory):
     """
