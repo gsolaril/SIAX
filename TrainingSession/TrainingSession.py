@@ -140,7 +140,7 @@ class TrainingSession:
     De esta manera, ante el menor cambio generamos resultados en un directorio distinto
     y no perdemos el output de ningún training o testing.
     """
-    self._identifier = f"{(datetime.datetime.now() + timedelta(hours=-3)):%Y%m%d%H%M%S%f}"
+    self._identifier = f"{(datetime.datetime.now(datetime.timezone.utc) + timedelta(hours=-3)):%Y%m%d%H%M%S%f}"
 
 
   def __persist__(self):
@@ -197,15 +197,16 @@ class TrainingSession:
         text_file.write(self._get_stats())
 
   def _get_stats(self):
-    dt = f"{(datetime.datetime.now() + timedelta(hours=-3)):%Y-%m-%d %H:%M:%S}"
+    dt = f"{(datetime.datetime.now(datetime.timezone.utc) + timedelta(hours=-3)):%Y-%m-%d %H:%M:%S}"
     mae = self._evaluation.mae
     mse = self._evaluation.mse
     correct_direction = self._evaluation.correct_direction
     validation_size = self._valid.shape[0]
     identifier = self._identifier
+    training_data = self._training_market_data.summary()
 
-    return f"Identifier,DateTime,MAE,MSE,Validation Size,Correct Direction\n" + \
-      f"{identifier},{dt},{mae},{mse},{validation_size},{correct_direction}"
+    return f"Identifier,DateTime,TrainingData,MAE,MSE,Validation Size,Correct Direction\n" + \
+      f"{identifier},{dt},{training_data},{mae},{mse},{validation_size},{correct_direction}"
 
   def __persisst_arrays__(self, directory):
     """
