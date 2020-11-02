@@ -55,12 +55,6 @@ class TrainingSession:
     # queremos guardarlas, seteando este parámetro en True, se guradan en un csv
     self._save_predictions = save_full_predictions
 
-    # Opcionalmente se puede transformar el validation set
-    # En general vamos a estimar la diferencia en los valores de la serie
-    # y no los valores en sí. Acá transformamos la serie de ese modo.
-    if self._model.transform_series:
-      self._valid = self._model.transform_series(self._valid)
-
     # Para Backtesting
     self._backtesting_market_data = None
     self._backtesting_strategy = None
@@ -86,8 +80,15 @@ class TrainingSession:
     # Luego predigo en base al validation set
     self._forecast = self._model.predict(self._valid)
 
+    valid_compare = self._valid
+    # Opcionalmente se puede transformar el validation set
+    # En general vamos a estimar la diferencia en los valores de la serie
+    # y no los valores en sí. Acá transformamos la serie de ese modo.
+    if self._model.transform_series:
+      valid_compare = self._model.transform_series(valid_compare)
+
     # Creo un evaluador para la serie de validación y la predicción
-    evaluator = PredictionEvaluator(self._valid, self._forecast)
+    evaluator = PredictionEvaluator(valid_compare, self._forecast)
 
     # Guardo la evaluación de la predicción.
     self._evaluation = evaluator.evaluate()
@@ -201,9 +202,10 @@ class TrainingSession:
     mse = self._evaluation.mse
     correct_direction = self._evaluation.correct_direction
     validation_size = self._valid.shape[0]
+    identifier = self._identifier
 
-    return f"DateTime,MAE,MSE,Validation Size,Correct Direction\n" + \
-      f"{dt},{mae},{mse},{validation_size},{correct_direction}"
+    return f"Identifier,DateTime,MAE,MSE,Validation Size,Correct Direction\n" + \
+      f"{identifier},{dt},{mae},{mse},{validation_size},{correct_direction}"
 
   def __persisst_arrays__(self, directory):
     """
