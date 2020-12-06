@@ -1,1 +1,1 @@
-from SIAX.Backtest import Backtesting_Vectorizado
+from SIAX.Backtest.Backtesting_Vectorizado import Backtest
