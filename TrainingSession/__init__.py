@@ -1,1 +1,1 @@
-from SIAX.TrainingSession import *
+from SIAX.TrainingSession import TrainingSession
