@@ -6,6 +6,7 @@ from datetime import timedelta
 from os import path
 from SIAX.Backtest.Backtesting_Vectorizado import Backtest
 from SIAX.TrainingSession.PredictionEvaluator import PredictionEvaluator
+from SIAX.Misc.DataFrameProcessing import DataFrameProcessing
 
 class TrainingSession:
   """
@@ -33,7 +34,7 @@ class TrainingSession:
   lo que su valor por defecto es False.
   """
 
-  def __init__(self, model, training_market_data, results_storage = 'results', save_full_predictions = False):
+  def __init__(self, model, training_market_data, window_size = 5,results_storage = 'results', save_full_predictions = False):
 
     # Un identificador único que se va reseteando si cambia algo en la sesión
     self.__reset_identifier__()
@@ -46,7 +47,11 @@ class TrainingSession:
 
     # Market data usada para el training del modelo
     self._training_market_data = training_market_data
-    self._train, self._valid = self._training_market_data.to_series_dataset()
+
+    # El procesador de dataframes a usar
+    self._window_size = window_size
+
+    self._window_generator = self._training_market_data.to_window_generator(window_size)
 
     # La serie que va a predecir
     self._forecast = None
@@ -75,20 +80,13 @@ class TrainingSession:
     self.__reset_identifier__()
 
     # Entreno el modelo con el set correspondiente
-    self._model.train(self._train)
+    self._model.train(self._window_generator.train)
 
     # Luego predigo en base al validation set
-    self._forecast = self._model.predict(self._valid)
-
-    valid_compare = self._valid
-    # Opcionalmente se puede transformar el validation set
-    # En general vamos a estimar la diferencia en los valores de la serie
-    # y no los valores en sí. Acá transformamos la serie de ese modo.
-    if self._model.transform_series:
-      valid_compare = self._model.transform_series(valid_compare)
+    self._forecast = self._model.predict(self._window_generator.valid)
 
     # Creo un evaluador para la serie de validación y la predicción
-    evaluator = PredictionEvaluator(valid_compare, self._forecast)
+    evaluator = PredictionEvaluator(self._window_generator.valid, self._forecast)
 
     # Guardo la evaluación de la predicción.
     self._evaluation = evaluator.evaluate()

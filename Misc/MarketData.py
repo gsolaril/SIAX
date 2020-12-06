@@ -1,13 +1,14 @@
-from SIAX.Misc.TimeSeriesUtils import TimeSeriesUtils
+from SIAX.NeuralNetworks.WindowGeneratorFactory import WindowGeneratorFactory
 
 class MarketData:
 
-  def __init__(self, symbol, frequency, start_date, rows, dataset):
+  def __init__(self, symbol, frequency, start_date, rows, dataset, col_to_predict = "Close"):
     self.symbol = symbol
     self.frequency = frequency
     self.start_date = start_date
     self.rows = rows
     self.dataset = dataset
+    self.col_to_predict = col_to_predict
 
   def describe(self):
     """
@@ -23,14 +24,10 @@ class MarketData:
 
     return f"{self.symbol}|{self.frequency}|{self.start_date}|{self.rows}"
   
-  def to_series_dataset(self):
+  def to_window_generator(self, window_size):
     """
     Devuelve dos series de tiempo. Una de training y una de validación.
     El 80% de la serie va a ser de training y el 20 de validación.
     """
 
-    time, series = TimeSeriesUtils.get_time_series_from_dataframe(self.dataset)
-
-    _, series_train, _, series_valid = TimeSeriesUtils.split_dataset(time, series)
-
-    return series_train, series_valid
+    return WindowGeneratorFactory.build_multi_input_diff(self.dataset, self.col_to_predict, window_size)
