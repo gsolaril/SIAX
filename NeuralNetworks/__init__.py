@@ -1,3 +1,3 @@
-from SIAX.NeuralNetworks import ModelBase
-from SIAX.NeuralNetworks import ModelConfiguration
+from SIAX.NeuralNetworks.ModelBase import ModelBase
+from SIAX.NeuralNetworks.ModelConfiguration import ModelConfiguration
 #from SIAX.NeuralNetworks import WindowGeneratorFactory
