@@ -1,1 +1,1 @@
-from TrainingSession import *
+from TrainingSession import TrainingSession
