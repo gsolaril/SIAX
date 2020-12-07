@@ -33,7 +33,7 @@ class MarketData:
     return WindowGeneratorFactory.build_multi_input_diff(self.dataset, [self.col_to_predict], window_size)
 
   def get_features(self):
-    return self.dataset.drop([self.col_to_predict])
+    return self.dataset.drop(columns=[self.col_to_predict])
 
   def get_labels(self):
     return self.dataset[self.col_to_predict]

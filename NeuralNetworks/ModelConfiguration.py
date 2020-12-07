@@ -15,3 +15,4 @@ class ModelConfiguration:
     self.loss = loss
     self.metrics = metrics
     self.callbacks = callbacks
+    self.batch_size = batch_size

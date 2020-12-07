@@ -26,7 +26,8 @@ class ModelBase():
     return self.call(inputs)
 
   def predict(self, inputs):
-    return self.call(inputs)
+    for input, _ in inputs:
+      yield self.model(input)
 
   def call(self, inputs):
     return self.model(inputs)
