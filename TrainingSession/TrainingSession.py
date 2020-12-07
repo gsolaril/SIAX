@@ -83,10 +83,10 @@ class TrainingSession:
     self._model.train(self._window_generator.train)
 
     # Luego predigo en base al validation set
-    self._forecast = self._model.predict(self._window_generator.valid)
+    self._forecast = self._model.predict(self._training_market_data.get_features())
 
     # Creo un evaluador para la serie de validación y la predicción
-    evaluator = PredictionEvaluator(self._window_generator.valid, self._forecast)
+    evaluator = PredictionEvaluator(self._training_market_data.get_labels(), self._forecast)
 
     # Guardo la evaluación de la predicción.
     self._evaluation = evaluator.evaluate()

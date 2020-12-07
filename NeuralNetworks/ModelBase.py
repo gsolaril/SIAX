@@ -39,10 +39,12 @@ class ModelBase():
     if validation_data:
       self.history = self.model.fit(train_data, epochs=self.config.max_epochs,
                           validation_data=validation_data,
-                          callbacks=self.config.callbacks)
+                          callbacks=self.config.callbacks,
+                          batch_size=self.config.batch_size)
     else:      
       self.history = self.model.fit(train_data, epochs=self.config.max_epochs,
-                          callbacks=self.config.callbacks)
+                          callbacks=self.config.callbacks,
+                          batch_size=self.config.batch_size)
 
     return self.history
 

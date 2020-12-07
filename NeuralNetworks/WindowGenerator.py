@@ -6,10 +6,10 @@ from SIAX.Misc.DataFrameProcessing import DataFrameProcessing
 
 class WindowGenerator():
 
-  def __init__(self, input_width, label_width, shift, df, label_columns=None, batch_size=32):
+  def __init__(self, input_width, label_width, shift, df, label_columns=None, batch_size=32, dataframe_processing=DataFrameProcessing()):
 
     # The dataframe needs to be split
-    train_df, val_df, test_df = DataFrameProcessing.split_data(df)
+    train_df, val_df, test_df = dataframe_processing.split_data(df)
 
     # Store the raw data.
     self.train_df = train_df

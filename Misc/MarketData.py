@@ -30,4 +30,10 @@ class MarketData:
     El 80% de la serie va a ser de training y el 20 de validación.
     """
 
-    return WindowGeneratorFactory.build_multi_input_diff(self.dataset, self.col_to_predict, window_size)
+    return WindowGeneratorFactory.build_multi_input_diff(self.dataset, [self.col_to_predict], window_size)
+
+  def get_features(self):
+    return self.dataset.drop([self.col_to_predict])
+
+  def get_labels(self):
+    return self.dataset[self.col_to_predict]
