@@ -1,3 +1,5 @@
+from SIAX.NeuralNetworks.WindowGenerator import WindowGenerator
+
 class NormalizedWindowGenerator(WindowGenerator):
   """
   A `WindowGenerator` that normalizes the data before returning it.
