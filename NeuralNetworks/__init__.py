@@ -1,5 +1,4 @@
 # Clases anteriores al Window Generator
-from SIAX.NeuralNetworks.ModelTesting import ModelTesting
 from SIAX.NeuralNetworks.WindowBasedModel import WindowBasedModel
 
 # Modelos pre-hechos
