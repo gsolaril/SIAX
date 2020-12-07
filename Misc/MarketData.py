@@ -24,13 +24,13 @@ class MarketData:
 
     return f"{self.symbol}|{self.frequency}|{self.start_date}|{self.rows}"
   
-  def to_window_generator(self, window_size):
+  def to_window_generator(self, window_size, label_width=1):
     """
     Devuelve dos series de tiempo. Una de training y una de validación.
     El 80% de la serie va a ser de training y el 20 de validación.
     """
 
-    return WindowGeneratorFactory.build_multi_input_diff(self.dataset, [self.col_to_predict], window_size)
+    return WindowGeneratorFactory.build_multi_input_diff(self.dataset, [self.col_to_predict], window_size, label_width=label_width)
 
   def get_features(self):
     return self.dataset.drop(columns=[self.col_to_predict])

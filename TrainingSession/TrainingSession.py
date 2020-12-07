@@ -82,11 +82,17 @@ class TrainingSession:
     # Entreno el modelo con el set correspondiente
     self._model.train(self._window_generator.train)
 
+    validation_data = self._window_generator.val
+
     # Luego predigo en base al validation set
-    self._forecast = self._model.predict(self._window_generator.val)
+    self._forecast = self._model.predict(validation_data)
+
+    self._forecast = np.array([yhat for yhat_batch in self._forecast for yhat in yhat_batch[:,0,0]])
+
+    self._valid = np.array([y for x_batch, y_batch in validation_data for y in y_batch[:,0,0]])
 
     # Creo un evaluador para la serie de validación y la predicción
-    evaluator = PredictionEvaluator([y for x, y in self._window_generator.val], self._forecast)
+    evaluator = PredictionEvaluator(self._valid, self._forecast)
 
     # Guardo la evaluación de la predicción.
     self._evaluation = evaluator.evaluate()
