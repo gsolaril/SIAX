@@ -87,8 +87,10 @@ class MarketDataRepository:
     # Me quedo con las filas desde start_data en adelante
     data = data.loc[start_date:]
 
+    rows = rows if rows else data.shape[0]
+
     # Chequeo que haya datos antes de devolverlos
-    assert rows < data.shape[0], "No hay suficientes datos para devolver"
+    assert rows <= data.shape[0], "No hay suficientes datos para devolver"
 
     # Si se pidió una cantidad de filas, me quedo con la cantidad solicitada
     if rows:
