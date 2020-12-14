@@ -22,12 +22,12 @@ class TrainingSession:
   *** train: que reciba una serie de tiempo
   *** call: que reciba un dataframe y que prediga el siguiente valor de una de sus features
   *** save_model: que reciba un directorio y guarde su representación en archivos ahí adentro
+
+  *** Además tiene que tener una propiedad `window_size` que represente el tamaño de la ventana que usa
   
   * training_market_data: Un objeto de la clase MarketData con el cual va a entrenar
 
   * validation_market_data: Un objeto de la clase MarketData con el cual va a hacer la validación
-
-  * window_size: tamaño de la ventana, es decir cuántos timesteps se deben leer para predecir el siguiente.
 
   * pre_processor: (opcional) un callable que reciba un dataframe, lo modifique y lo devuelva.
     Por defecto usa el preprocesador PreProcessor que no hace ningún cambio.
@@ -40,7 +40,7 @@ class TrainingSession:
   lo que su valor por defecto es False.
   """
 
-  def __init__(self, model, training_market_data, validation_market_data, window_size, pre_processor = PreProcessor(), results_storage = 'results', save_full_predictions = False):
+  def __init__(self, model, training_market_data, validation_market_data, pre_processor = PreProcessor(), results_storage = 'results', save_full_predictions = False):
 
     # Un identificador único que se va reseteando si cambia algo en la sesión
     self.__reset_identifier__()
@@ -58,7 +58,7 @@ class TrainingSession:
     self._validation_market_data = validation_market_data
 
     # El procesador de dataframes a usar
-    self._window_size = window_size
+    self._window_size = model.window_size
 
     # La serie que va a predecir
     self._forecast = None
@@ -89,18 +89,27 @@ class TrainingSession:
     # Creo un identificador nuevo porque vuelvo a correr
     self.__reset_identifier__()
 
-    # Entreno el modelo con el set correspondiente
+    ## Training Data
+
+    # Pre procesamiento de los datos    
     training_data = self.pre_processor(self._training_market_data.dataset)
 
-    self._model.train(WindowGenerator(training_data, self._window_size).train)
+    # Agrupo los datos en ventanas. Shuffle = True porque durante el training es preferible que la data no esté ordenada
+    trining_windows = WindowGenerator(training_data, self._window_size).make_dataset(training_data, shuffle=True)
 
-    # Luego predigo en base a la market data de validación
+
+    ## Validation Data
+
+    # Pre procesamiento de los datos
     validation_data = self.pre_processor(self._validation_market_data.dataset)
 
-    # Creo ventanas con los datos de validación
+    # Agrupo los datos en ventanas. Shuffle = False porque quiero la información en orden para comparar y graficar
     val_windows = WindowGenerator(validation_data, self._window_size).make_dataset(validation_data, shuffle=False)
 
-    # Predigo usando esas ventanas
+    # Entreno el modelo con el set correspondiente y pasándole la data de validación para imprimir métricas
+    self._model.train(trining_windows, validation_data = val_windows)
+
+    # Predigo usando las ventanas de validación
     self._forecast = np.array([yhat for x, y in val_windows for yhat in self._model.call(x)])
 
     # Quito las dimensiones extra

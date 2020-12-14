@@ -32,10 +32,6 @@ class ModelBase():
   def evaluate(self, inputs_labels):
     return self.model.evaluate(inputs_labels)
 
-  def predict(self, inputs):
-    for input, _ in inputs:
-      yield self.model(input)
-
   def train(self, train_data, validation_data = None):
 
     if validation_data:
