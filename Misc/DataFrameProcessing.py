@@ -5,9 +5,13 @@ import tensorflow as tf
 
 class DataFrameProcessing:
 
-  def __init__(self, val_percent = 0.7, test_percent = None):
+  def __init__(self, val_percent = None, test_percent = None):
     self.val_percent = val_percent
     self.test_percent = test_percent
+
+  @staticmethod
+  def no_split():
+    return DataFrameProcessing()
 
   def take_one_every_n(self, df, n):
     """
@@ -34,14 +38,21 @@ class DataFrameProcessing:
     """
     n = len(df)
 
-    train_df = df[0:int(n*self.val_percent)].copy()
-
-    if self.test_percent:
-      val_df = df[int(n*self.val_percent):int(n*self.test_percent)].copy()
-      test_df = df[int(n*self.test_percent):].copy()
-    else:
-      val_df = df[int(n*self.val_percent):].copy()
+    if self.val_percent == None:
+      train_df = df.copy()
+      val_df = None
       test_df = None
+
+    else:
+      train_df = df[0:int(n*self.val_percent)].copy()
+
+      if self.test_percent:
+        val_df = df[int(n*self.val_percent):int(n*self.test_percent)].copy()
+        test_df = df[int(n*self.test_percent):].copy()
+
+      else:
+        val_df = df[int(n*self.val_percent):].copy()
+        test_df = None
 
     return train_df, val_df, test_df
 

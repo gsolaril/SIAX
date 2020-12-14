@@ -6,7 +6,7 @@ from SIAX.Misc.DataFrameProcessing import DataFrameProcessing
 
 class WindowGenerator():
 
-  def __init__(self, input_width, label_width, shift, df, label_columns=None, batch_size=32, dataframe_processing=DataFrameProcessing()):
+  def __init__(self, df, input_width, label_width=1, shift=1, label_columns=['Close'], batch_size=32, dataframe_processing=DataFrameProcessing()):
 
     # The dataframe needs to be split
     train_df, val_df, test_df = dataframe_processing.split_data(df)
@@ -103,6 +103,9 @@ class WindowGenerator():
     ds = ds.map(self.split_window)
   
     return ds
+
+  def __call__(self):
+    return self.train()
 
   @property
   def train(self):

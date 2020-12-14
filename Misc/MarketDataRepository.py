@@ -51,10 +51,12 @@ class MarketDataRepository:
       ('ICMarkets','^EUSTX50','M1'): '1F9hKMK7HLlpZmdPyEC33lSsZHdbQKMvR',
       ('ICMarkets','^JPN225' ,'M1'): '1tWh5jYEzt7zjUe_nDLFFyWpEpQa3n4jm',
       ('ICMarkets','^UK100'  ,'M1'): '14n9TiiyIg611X3DjRpSO9HY7z-efj2tn',
-      ('ICMarkets','^US500'  ,'M1'): '17cT7dOPvxnlYkoPhzm2wBgVdydugvhMF'
+      ('ICMarkets','^US500'  ,'M1'): '17cT7dOPvxnlYkoPhzm2wBgVdydugvhMF',
+      ('DUMMY'    ,'LINEAL'  ,'M1'): '1lrpzdmLQ--iN6CzWvJILf2CkdXtO5SwA',
+      ('DUMMY'    ,'SENO'    ,'M1'): '1BZN5NEVoRkLJpGjEADwFcRwCFYoCHldF'
     }
 
-  def get_dataset(self, symbol, frequency = 'M1', start_date = '2016-09-01', rows = None):
+  def get_dataset(self, symbol, frequency = 'M1', start_date = '2016-09-01', rows = None, source = 'ICMarkets'):
     """
     Devuelve un dataset filtrado según los parámetros.
     Para obtener los posibles valores que se le pueden pasar, llamar al método
@@ -67,10 +69,9 @@ class MarketDataRepository:
     start_date: fecha desde la cual se requiere la información.
     rows: cantidad de filas a pedir. Se recomienda no usar el dataset
           completo porque tiene millones de filas
-    """
-
-    # Esto va a ser configurable después. Por ahora es siempre el mismo valor
-    source = 'ICMarkets'
+    source: por defecto es ICMarkets. Para usar alguno de los datasets dummy,
+            usar el source DUMMY
+    """    
 
     # Armo la clave para ir a buscar al diccionario
     key = (source, symbol, frequency)
@@ -101,16 +102,18 @@ class MarketDataRepository:
     return MarketData(symbol, frequency, start_date, rows, data)
 
 
-  def get_available_dataset_list(self):
+  def get_available_dataset_list(self, source='ICMarkets'):
     """
-    Devuelve el listado de (símbolo, frecuencia) disponibles.
+    Devuelve el listado de (símbolo, frecuencia) disponibles para la fuente solicitada.
     """
 
     # La key del diccionario está formada por source, symbol y frequency,
     # pero sólo devolvemos el símbolo y la frecuencia
+    # ya que la fuente fue pasada por parámetro
     return [(symbol, frequency)
-            for source, symbol, frequency
-            in self._datasets.keys()]
+            for src, symbol, frequency
+            in self._datasets.keys()
+            if src == source]
 
 
 

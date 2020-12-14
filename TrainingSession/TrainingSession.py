@@ -34,7 +34,7 @@ class TrainingSession:
   lo que su valor por defecto es False.
   """
 
-  def __init__(self, model, training_market_data, window_size = 5,results_storage = 'results', save_full_predictions = False):
+  def __init__(self, model, training_market_data, validation_market_data, window_size = 5,results_storage = 'results', save_full_predictions = False, pre_processor = None):
 
     # Un identificador único que se va reseteando si cambia algo en la sesión
     self.__reset_identifier__()
@@ -48,6 +48,9 @@ class TrainingSession:
     # Market data usada para el training del modelo
     self._training_market_data = training_market_data
 
+    # Market data usada para validación
+    self.validation_market_data = validation_market_data
+
     # El procesador de dataframes a usar
     self._window_size = window_size
 
@@ -59,6 +62,9 @@ class TrainingSession:
     # Guardar toda la predicción ocupa demasiado espacio, pero si por algún motivo
     # queremos guardarlas, seteando este parámetro en True, se guradan en un csv
     self._save_predictions = save_full_predictions
+
+    # Un preprocesador que recibe un dataframe y devuelve otro con más columnas
+    self.pre_processor = pre_processor
 
     # Para Backtesting
     self._backtesting_market_data = None
@@ -82,14 +88,21 @@ class TrainingSession:
     # Entreno el modelo con el set correspondiente
     self._model.train(self._window_generator.train)
 
-    validation_data = self._window_generator.val
+    validation_data = self.validation_market_data.dataset
+
+    if self.pre_processor:
+      validation_data = self.pre_processor(validation_data)
 
     # Luego predigo en base al validation set
-    self._forecast = self._model.predict(validation_data)
+    windows = [np.expand_dims(np.array(validation_data[i:i+self._window_size]), 0) for i in range(len(validation_data)-self._window_size)]
 
-    self._forecast = np.array([yhat for yhat_batch in self._forecast for yhat in yhat_batch[:,0,0]])
+    self._forecast = np.array([self._model.call(x) for x in windows])
 
-    self._valid = np.array([y for x_batch, y_batch in validation_data for y in y_batch[:,0,0]])
+    self._forecast = np.squeeze(self._forecast)
+
+    self._valid = np.array(self.validation_market_data.get_labels().diff()[self._window_size+1:])
+
+    assert len(self._forecast) == len(self._valid), f'Error. Forecast: {len(self._forecast)}, Valid: {len(self._valid)}'
 
     # Creo un evaluador para la serie de validación y la predicción
     evaluator = PredictionEvaluator(self._valid, self._forecast)
