@@ -2,14 +2,13 @@ import numpy as np
 import tensorflow as tf
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from SIAX.Misc.DataFrameProcessing import DataFrameProcessing
 
 class WindowGenerator():
 
-  def __init__(self, df, input_width, label_width=1, shift=1, label_columns=['Close'], batch_size=32, dataframe_processing=DataFrameProcessing()):
+  def __init__(self, df, input_width, label_width=1, shift=1, label_columns=['Close'], batch_size=32, data_splitter=None):
 
     # The dataframe needs to be split
-    train_df, val_df, test_df = dataframe_processing.split_data(df)
+    train_df, val_df, test_df = data_splitter(df) if data_splitter else df, None, None
 
     # Store the raw data.
     self.train_df = train_df

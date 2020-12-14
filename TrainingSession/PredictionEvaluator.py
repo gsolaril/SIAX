@@ -1,5 +1,5 @@
 import numpy as np
-from SIAX.Misc.TimeSeriesUtils import TimeSeriesUtils
+import matplotlib.pyplot as plt
 from SIAX.TrainingSession.PredictionEvaluation import PredictionEvaluation
 
 class PredictionEvaluator:
@@ -50,10 +50,18 @@ class PredictionEvaluator:
     Devuelve un gráfico comparando la predicción y la serie de validación
     """
 
-    t_s_prediction = (range(self._prediction_size), self._prediction)
-    t_s_validation = (range(self._prediction_size), self._validation)
+    time = range(self._prediction_size)
 
-    return TimeSeriesUtils.get_plot_series([t_s_prediction, t_s_validation])
+    # Inicializo del gráfico
+    plt.figure(figsize=(30, 6))
+    plt.xlabel("Time")
+    plt.ylabel("Value")
+    plt.grid(True)
+    
+    plt.plot(time, self._validation)
+    plt.plot(time, self._prediction)
+
+    return plt
 
 
   def _calculate_mae(self):

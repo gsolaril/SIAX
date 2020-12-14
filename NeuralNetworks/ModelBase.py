@@ -11,8 +11,9 @@ class ModelBase():
   It's only required to override the `build_model` method.
   """
 
-  def __init__(self, model_configuration=ModelConfiguration()):
+  def __init__(self, window_size, model_configuration=ModelConfiguration()):
     super().__init__()
+    self.window_size = window_size
     self.config = model_configuration
     self.model = self.build_model()
     self.model.compile(loss=self.config.loss,
@@ -25,15 +26,15 @@ class ModelBase():
   def __call__(self, inputs):
     return self.call(inputs)
 
-  def predict(self, inputs):
-    for input, _ in inputs:
-      yield self.model(input)
-
   def call(self, inputs):
     return self.model(inputs)
   
   def evaluate(self, inputs_labels):
     return self.model.evaluate(inputs_labels)
+
+  def predict(self, inputs):
+    for input, _ in inputs:
+      yield self.model(input)
 
   def train(self, train_data, validation_data = None):
 
