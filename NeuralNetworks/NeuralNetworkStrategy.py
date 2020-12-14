@@ -7,14 +7,15 @@ import matplotlib.pyplot as plt
 import csv
 import tensorflow as tf
 
+from SIAX.PreProcessing.PreProcessor import PreProcessor
+
 class NeuralNetworkStrategy:
 
-  def __init__(self, model, OHLC = "Close"):
+  def __init__(self, model, pre_processor = PreProcessor(), OHLC = "Close"):
     """
       Se puede heredar de esta clase y sobreescribirle cualquiera de los
       siguientes métodos:
     
-      * get_series_to_forecast: Cómo extraer la serie a partir de una Row.
       * calculate_type_of_operation: Qué operación hacer
       * calculate_stop_loss: Cómo setear el Stop Loss
       * calculate_take_profit: Cómo setear el Take Profit
@@ -22,52 +23,53 @@ class NeuralNetworkStrategy:
     """
 
     self.model = model
-    self.minRows = model.window_size + 2
+    self.minRows = model.window_size
     self.Indicators = []
     self.OHLC = OHLC
+    self.pre_processor = pre_processor
 
 
-  def call(self, Rows):
+  def call(self, rows):
+    return self.__call__(rows)
+
+  def __call__(self, rows):
 
     OT = OP = Type = Lot = SL = TP = None  ## Default: None.
 
-    series_to_forecast = self.get_series_to_forecast(Rows)
+    processed_rows = self._pre_process_rows(rows)
 
-    prediction = self.model.predict(series_to_forecast)[0]
+    prediction = self.model.call(processed_rows)
 
     Type = self.calculate_type_of_operation(prediction)
 
-    if Type:                                                 # Si compro o vendo...
-      OT, Lot = Rows.index[-1], 1                            # Opening Time y Lote
-      OP = Rows["Close"].iloc[-1]                            # La operación se ejecuta al cierre de vela.
+    if Type:                        # Si compro o vendo...
+      OT, Lot = rows.index[-1], 1   # Opening Time y Lote
+      OP = rows["Close"].iloc[-1]   # La operación se ejecuta al cierre de vela.
 
-      SL = self.calculate_stop_loss(Rows, Type, prediction)
+      SL = self.calculate_stop_loss(rows, Type, prediction)
 
-      TP = self.calculate_take_profit(Rows, Type, prediction, SL, OP)
+      TP = self.calculate_take_profit(rows, Type, prediction, SL, OP)
 
-    Indicators = self.calculate_indicators(Rows, Type, prediction, SL, OP, TP)
+    Indicators = self.calculate_indicators(rows, Type, prediction, SL, OP, TP)
 
     Signal = {"OT": OT, "OP": OP, "Type": Type, "Size": Lot, "SL": SL, "TP": TP}
 
     return Indicators, Signal
 
-
-  def get_series_to_forecast(self, Rows):
+  def _pre_process_rows(self, rows):
     """
-    A partir de las Rows que recibe para hacer la predicción,
-    devuelve la serie de datos que le va a pasar al modelo.
-    
-    Keyword arguments:
-    Rows -- Las filas crudas del dataset como las recibe el método call
-    
-    returns -- Los valores de la serie de tiempo extraidos de las Rows
+    Este método no se debería sobreescribir. Recibe las rows y se le aplica
+    el pre procesamiento que se recibió en el constructor
     """
-  
-    Calc = Rows[self.OHLC]                 ## Tomo la columna que quiero usar
-    series_to_forecast = Calc.to_numpy().T ## La columna del df convertida en serie
-    
-    return series_to_forecast
+    # Llamo al pre procesador
+    processed_rows = self.pre_processor(rows)
 
+    # Convierto la salida en un array de numpy
+    processed_rows = np.array(processed_rows)
+
+    # Le agrego una dimensión al principio porque sólo quiero una predicción
+    # y no un batch completo
+    return tf.expand_dims(processed_rows,0)
 
   def calculate_type_of_operation(self, prediction):
     """
@@ -79,26 +81,26 @@ class NeuralNetworkStrategy:
 
     return t
 
-  def calculate_stop_loss(self, Rows, Type, prediction):
+  def calculate_stop_loss(self, rows, Type, prediction):
     """
     Calcula el Stop Loss en base a alguna estrategia.
     Este método se debería sobreescribir para definir otra estrategia
     para el cálculo del Stop Loss
     """
     
-    highest = max(Rows["High"])
-    lowest = min(Rows["Low"])
+    highest = max(rows["High"])
+    lowest = min(rows["Low"])
 
     SL = 0
 
     if Type > 0:
-      SL = lowest - np.abs(lowest) * 0.01
+      SL = lowest - np.abs(lowest) * 0.001
     else:
-      SL = highest + np.abs(highest) * 0.01
+      SL = highest + np.abs(highest) * 0.001
 
     return SL
 
-  def calculate_take_profit(self, Rows, Type, prediction, SL, OP):
+  def calculate_take_profit(self, rows, Type, prediction, SL, OP):
     """
     Calcula el Stop Loss en base a alguna estrategia.
     Este método se debería sobreescribir para definir otra estrategia
@@ -110,7 +112,7 @@ class NeuralNetworkStrategy:
 
     return TP
 
-  def calculate_indicators(self, Rows, Type, prediction, SL, OP, TP):
+  def calculate_indicators(self, rows, Type, prediction, SL, OP, TP):
     """
     A partir de todos los valores relevantes de la operación calcula
     los indicadores necesarios.
