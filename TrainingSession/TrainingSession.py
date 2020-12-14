@@ -5,6 +5,7 @@ import datetime
 from datetime import timedelta
 from os import path
 from SIAX.Backtest.Backtesting_Vectorizado import Backtest
+from SIAX.NeuralNetworks.WindowGenerator import WindowGenerator
 from SIAX.TrainingSession.PredictionEvaluator import PredictionEvaluator
 from SIAX.Misc.DataFrameProcessing import DataFrameProcessing
 
@@ -34,7 +35,7 @@ class TrainingSession:
   lo que su valor por defecto es False.
   """
 
-  def __init__(self, model, training_market_data, validation_market_data, window_size = 5,results_storage = 'results', save_full_predictions = False, pre_processor = None):
+  def __init__(self, model, training_market_data, validation_market_data, window_size = 5, results_storage = 'results', save_full_predictions = False, pre_processor = None):
 
     # Un identificador único que se va reseteando si cambia algo en la sesión
     self.__reset_identifier__()
@@ -49,12 +50,12 @@ class TrainingSession:
     self._training_market_data = training_market_data
 
     # Market data usada para validación
-    self.validation_market_data = validation_market_data
+    self._validation_market_data = validation_market_data
 
     # El procesador de dataframes a usar
     self._window_size = window_size
 
-    self._window_generator = self._training_market_data.to_window_generator(window_size)
+    #self._window_generator = self._training_market_data.to_window_generator(window_size)
 
     # La serie que va a predecir
     self._forecast = None
@@ -64,7 +65,7 @@ class TrainingSession:
     self._save_predictions = save_full_predictions
 
     # Un preprocesador que recibe un dataframe y devuelve otro con más columnas
-    self.pre_processor = pre_processor
+    self.pre_processor = pre_processor if pre_processor else (lambda x: x)
 
     # Para Backtesting
     self._backtesting_market_data = None
@@ -86,12 +87,11 @@ class TrainingSession:
     self.__reset_identifier__()
 
     # Entreno el modelo con el set correspondiente
-    self._model.train(self._window_generator.train)
+    training_data = self.pre_processor(self._training_market_data.dataset)
 
-    validation_data = self.validation_market_data.dataset
+    self._model.train(WindowGenerator(training_data, self._window_size).train)
 
-    if self.pre_processor:
-      validation_data = self.pre_processor(validation_data)
+    validation_data = self.pre_processor(self._validation_market_data.dataset)
 
     # Luego predigo en base al validation set
     windows = [np.expand_dims(np.array(validation_data[i:i+self._window_size]), 0) for i in range(len(validation_data)-self._window_size)]
@@ -100,7 +100,7 @@ class TrainingSession:
 
     self._forecast = np.squeeze(self._forecast)
 
-    self._valid = np.array(self.validation_market_data.get_labels().diff()[self._window_size+1:])
+    self._valid = np.array(self._validation_market_data.get_labels().diff()[self._window_size+1:])
 
     assert len(self._forecast) == len(self._valid), f'Error. Forecast: {len(self._forecast)}, Valid: {len(self._valid)}'
 
