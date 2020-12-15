@@ -23,7 +23,7 @@ class NeuralNetworkStrategy:
     """
 
     self.model = model
-    self.minRows = model.window_size
+    self.minRows = model.window_size + pre_processor.extra_rows
     self.Indicators = []
     self.OHLC = OHLC
     self.pre_processor = pre_processor

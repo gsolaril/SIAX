@@ -11,6 +11,7 @@ class DiffPreProcessor(KeepColumnsPreProcessor):
   def __init__(self):
     super().__init__()
     self._steps.extend([self._diff])
+    self.extra_rows += 1
 
   def _diff(self, df):
     return df.diff()[1:]

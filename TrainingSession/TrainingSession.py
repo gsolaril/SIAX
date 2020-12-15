@@ -226,7 +226,7 @@ class TrainingSession:
       self._evaluation.plot.savefig(plot_path)
 
     # Si se corrió el backtesting, guardo el csv con los resultados
-    if self._backtest and self._backtest.stats() and not self._backtest.stats().empty:
+    if self._backtest and not self._backtest.stats().empty:
       self._backtest.stats().to_csv(path.join(this_result_folder, "backtesting_statistics.csv"))
 
     with open(path.join(this_result_folder, "stats.csv"), "w") as text_file:
