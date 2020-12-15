@@ -5,7 +5,10 @@ import datetime
 from datetime import timedelta
 from os import path
 from SIAX.Backtest.Backtesting_Vectorizado import Backtest
+from SIAX.NeuralNetworks.WindowGenerator import WindowGenerator
 from SIAX.TrainingSession.PredictionEvaluator import PredictionEvaluator
+from SIAX.PreProcessing.DataFrameProcessing import DataFrameProcessing
+from SIAX.PreProcessing.PreProcessor import PreProcessor
 
 class TrainingSession:
   """
@@ -17,14 +20,18 @@ class TrainingSession:
   * model: Un modelo que tenga los siguientes 3 métodos:
 
   *** train: que reciba una serie de tiempo
-  *** predict: que reciba una serie de tiempo y que prediga el siguiente valor
-  *** save_model: que reciba un directorio y guarde su representación en archivos ahí adentro.
+  *** call: que reciba un dataframe y que prediga el siguiente valor de una de sus features
+  *** save_model: que reciba un directorio y guarde su representación en archivos ahí adentro
 
-  Además, no tiene que fallar si se le consulta la propiedad transform_series.
-  Puede ser None pero tiene que tenerla definida.
-
+  *** Además tiene que tener una propiedad `window_size` que represente el tamaño de la ventana que usa
+  
   * training_market_data: Un objeto de la clase MarketData con el cual va a entrenar
 
+  * validation_market_data: Un objeto de la clase MarketData con el cual va a hacer la validación
+
+  * pre_processor: (opcional) un callable que reciba un dataframe, lo modifique y lo devuelva.
+    Por defecto usa el preprocesador PreProcessor que no hace ningún cambio.
+  
   * results_storage: (opcional) el nombre del directorio donde guardar los resultados.
     Por defecto los va a guardar en './results'
 
@@ -33,7 +40,7 @@ class TrainingSession:
   lo que su valor por defecto es False.
   """
 
-  def __init__(self, model, training_market_data, results_storage = 'results', save_full_predictions = False):
+  def __init__(self, model, training_market_data, validation_market_data, pre_processor = PreProcessor(), results_storage = 'results', save_full_predictions = False):
 
     # Un identificador único que se va reseteando si cambia algo en la sesión
     self.__reset_identifier__()
@@ -46,7 +53,12 @@ class TrainingSession:
 
     # Market data usada para el training del modelo
     self._training_market_data = training_market_data
-    self._train, self._valid = self._training_market_data.to_series_dataset()
+
+    # Market data usada para validación
+    self._validation_market_data = validation_market_data
+
+    # El procesador de dataframes a usar
+    self._window_size = model.window_size
 
     # La serie que va a predecir
     self._forecast = None
@@ -54,6 +66,9 @@ class TrainingSession:
     # Guardar toda la predicción ocupa demasiado espacio, pero si por algún motivo
     # queremos guardarlas, seteando este parámetro en True, se guradan en un csv
     self._save_predictions = save_full_predictions
+
+    # Un preprocesador que recibe un dataframe, lo procesa y lo devuelve
+    self.pre_processor = pre_processor
 
     # Para Backtesting
     self._backtesting_market_data = None
@@ -74,21 +89,42 @@ class TrainingSession:
     # Creo un identificador nuevo porque vuelvo a correr
     self.__reset_identifier__()
 
-    # Entreno el modelo con el set correspondiente
-    self._model.train(self._train)
+    ## Training Data
 
-    # Luego predigo en base al validation set
-    self._forecast = self._model.predict(self._valid)
+    # Pre procesamiento de los datos    
+    training_data = self.pre_processor(self._training_market_data.dataset)
 
-    valid_compare = self._valid
-    # Opcionalmente se puede transformar el validation set
-    # En general vamos a estimar la diferencia en los valores de la serie
-    # y no los valores en sí. Acá transformamos la serie de ese modo.
-    if self._model.transform_series:
-      valid_compare = self._model.transform_series(valid_compare)
+    # Agrupo los datos en ventanas. Shuffle = True porque durante el training es preferible que la data no esté ordenada
+    trining_windows = WindowGenerator(training_data, self._window_size).make_dataset(training_data, shuffle=True)
+
+
+    ## Validation Data
+
+    # Pre procesamiento de los datos
+    validation_data = self.pre_processor(self._validation_market_data.dataset)
+
+    # Agrupo los datos en ventanas. Shuffle = False porque quiero la información en orden para comparar y graficar
+    val_windows = WindowGenerator(validation_data, self._window_size).make_dataset(validation_data, shuffle=False)
+
+    # Entreno el modelo con el set correspondiente y pasándole la data de validación para imprimir métricas
+    self._model.train(trining_windows, validation_data = val_windows)
+
+    # Predigo usando las ventanas de validación
+    self._forecast = np.array([yhat for x, y in val_windows for yhat in self._model.call(x)])
+
+    # Quito las dimensiones extra
+    self._forecast = np.squeeze(self._forecast)
+
+    # Formateo los true labels de las ventanas de validación
+    self._valid = np.array([y for _, y_batch in val_windows for y in y_batch])
+
+    # Quito las dimensiones extra
+    self._valid = np.squeeze(self._valid)
+
+    assert len(self._forecast) == len(self._valid), f'Error. Forecast length: {len(self._forecast)}, Validation length: {len(self._valid)}'
 
     # Creo un evaluador para la serie de validación y la predicción
-    evaluator = PredictionEvaluator(valid_compare, self._forecast)
+    evaluator = PredictionEvaluator(self._valid, self._forecast)
 
     # Guardo la evaluación de la predicción.
     self._evaluation = evaluator.evaluate()
