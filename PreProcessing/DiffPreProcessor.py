@@ -8,8 +8,8 @@ class DiffPreProcessor(KeepColumnsPreProcessor):
   D[n] = S[n+1] - S[n], for example:  D[0] = S[1] - S[0]
   """
 
-  def __init__(self):
-    super().__init__()
+  def __init__(self, columns_to_keep = ['Open','Low', 'High', 'Close']):
+    super().__init__(columns_to_keep)
     self._steps.extend([self._diff])
     self.extra_rows += 1
 
